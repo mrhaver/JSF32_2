@@ -7,6 +7,8 @@ package consolesaveedges;
 
 import java.io.File;
 import java.util.Scanner;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import manager.KochManager;
 /**
  *
@@ -19,7 +21,7 @@ public class ConsoleSaveEdges {
      */
     
     private static KochManager kochManager = new KochManager();
-    private static final String instructionLine = "Enter the kochlevel / q to stop / df to delete files: ";
+    private static final String instructionLine = "Enter the kochlevel / q to stop: ";
     
     public static void main(String[] args) {
         
@@ -28,20 +30,13 @@ public class ConsoleSaveEdges {
         String inputString;
      
         Scanner scanIn = new Scanner(System.in);
+        
         boolean retry = true;
         while(retry){
             inputString = scanIn.nextLine();
-                    
+
             if(inputString.equals("q")){
                 System.exit(0);
-            }
-            else if(inputString.equals("df")){
-                File dir = new File("D:\\Edges\\");
-                for(File file: dir.listFiles()) {
-                    file.delete();
-                } 
-                System.out.println("Files Deleted");
-                System.out.println(instructionLine);
             }
             else{
                 if(isInteger(inputString)){

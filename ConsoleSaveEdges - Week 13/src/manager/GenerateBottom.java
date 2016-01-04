@@ -7,8 +7,15 @@ package manager;
 
 import calculate.Edge;
 import calculate.KochFractal;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.Socket;
 import java.util.Observable;
 import java.util.Observer;
+import java.util.Random;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -20,31 +27,61 @@ public class GenerateBottom implements Runnable, Observer{
     final private KochManager km;
     final private int level;
     
-    public GenerateBottom(KochManager km, int level){
+    private static final Logger LOG = Logger.getLogger(GenerateBottom.class.getName());
+    
+    private Socket socket = null;
+    private ObjectOutputStream out = null;
+    private ObjectInputStream in = null;
+    
+    public GenerateBottom(KochManager km, int level,Socket s){
         this.level = level;
         this.koch = new KochFractal();
         koch.addObserver(this);
         koch.setLevel(level);
         this.km = km;
+        this.socket = s;
     }
 
     @Override
     public void update(Observable o, Object arg) {
         km.voegEdgeToe((Edge)arg);
+        try{
+            Edge value = (Edge) arg;
+            out.writeObject(value);
+            
+            LOG.log(Level.INFO, "verzonden: {0}", value);
+
+            socket.close();
+        }
+        catch(IOException ex){
+            LOG.log(Level.SEVERE, null, ex);
+        }
     }
 
     @Override
     public void run() {
-        koch.generateBottomEdge();        
-        synchronized(this){
-            km.IncreaseCounter();
-            if(km.getCounter() == 3){
-                System.out.println("Calculating finished with " + km.getAmountEdges() + " edges");
-                km.writeLockedMemMapped(level);
-                System.out.println("Enter the kochlevel / q to stop : ");
-                km.setCounter(0);
+        try {
+            LOG.log(Level.INFO, "Port: {0}", socket.getPort());
+            
+            this.in = new ObjectInputStream(socket.getInputStream());
+            this.out = new ObjectOutputStream(socket.getOutputStream());
+            
+            koch.generateBottomEdge();
+            
+            synchronized(this){
+                km.IncreaseCounter();
+                if(km.getCounter() == 3){
+                    System.out.println("Calculating finished with " + km.getAmountEdges() + " edges");
+                    km.writeLockedMemMapped(level);
+                    System.out.println("Enter the kochlevel / q to stop : ");
+                    km.setCounter(0);
+                }
             }
+            
+        } catch (IOException ex) {
+            LOG.log(Level.SEVERE, null, ex);
         }
+        
     }
     
 }

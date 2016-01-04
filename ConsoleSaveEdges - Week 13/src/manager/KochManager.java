@@ -18,6 +18,8 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.io.RandomAccessFile;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
@@ -38,6 +40,7 @@ public class KochManager {
     private Thread thrdLeft;
     private Thread thrdRight;
     private Thread thrdBottom;
+    private static final Logger LOG = Logger.getLogger(KochManager.class.getName());
     
     public KochManager(){
         this.edges = new ArrayList<>();
@@ -45,13 +48,35 @@ public class KochManager {
     }
     
     public void calculateKochFractal(int level){
-        edges.clear();
-        thrdBottom = new Thread(new GenerateBottom(this, level));
-        thrdLeft = new Thread(new GenerateLeft(this, level));
-        thrdRight = new Thread(new GenerateRight(this, level));
-        thrdBottom.start();
-        thrdLeft.start();
-        thrdRight.start();
+
+        try {
+            ServerSocket serverSocket = new ServerSocket(8189);
+            
+            LOG.log(Level.INFO, "Server is running. Listening on port: {0}", serverSocket.getLocalPort());
+            
+            while (true) {
+                
+                try {
+                    Socket incomingSocket = serverSocket.accept();
+                    LOG.log(Level.INFO, "New Client Connected: {0}", incomingSocket.getInetAddress());
+                    
+                    edges.clear();
+                    
+                    thrdBottom = new Thread(new GenerateBottom(this, level, incomingSocket));
+                    thrdLeft = new Thread(new GenerateLeft(this, level, incomingSocket));
+                    thrdRight = new Thread(new GenerateRight(this, level, incomingSocket));
+                    
+                    thrdBottom.start();
+                    thrdLeft.start();
+                    thrdRight.start();
+                    
+                } catch (IOException e) {
+                    LOG.log(Level.WARNING, "IOException occurred: {0}", e.getMessage());
+                }
+            }
+        } catch (IOException ex) {
+            LOG.log(Level.SEVERE, null, ex);
+        }
     }
     
     public void writeByteEdgesToFile(int level){
@@ -166,12 +191,12 @@ public class KochManager {
         int length = edges.size() * 32; // one edge 4 doubles 1 double 8 byte -- so length = edges.size() * 4 * 8
         try{
             //Write
-            File f = new File("D:\\Edges\\Mapped" + level + ".txt");
+            File f = new File("C:\\Edges\\Mapped" + level + ".txt");
             if(f.exists()){
                 f.delete();
             }
             RandomAccessFile ras;
-            ras = new RandomAccessFile("D:\\Edges\\Mapped" + level + ".txt", "rw");
+            ras = new RandomAccessFile("C:\\Edges\\Mapped" + level + ".txt", "rw");
             FileChannel fc = ras.getChannel();
             MappedByteBuffer out;
             out = fc.map(FileChannel.MapMode.READ_WRITE,0,length);
@@ -196,7 +221,7 @@ public class KochManager {
     }
     
     public void writeLockedMemMapped(int level){
-        final String BUFFERFILE = "D:\\Edges\\buffer.bin";
+        final String BUFFERFILE = "C:\\Edges\\buffer.bin";
         final boolean EXCLUSIVE = false;
         final boolean SHARED = true;
         final int MAXVAL = edges.size(); // We schrijven het aantal edges weg

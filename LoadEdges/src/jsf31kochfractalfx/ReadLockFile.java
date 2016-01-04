@@ -23,7 +23,7 @@ import javafx.scene.paint.Color;
  */
 public class ReadLockFile implements Runnable{
 
-    private final String BUFFERFILE = "D:\\Edges\\buffer.bin";
+    private final String BUFFERFILE = "C:\\Edges\\buffer.bin";
     private final boolean EXCLUSIVE = false;
     private final boolean SHARED = true;
     private final int STATUS_NOT_READ = 1;
