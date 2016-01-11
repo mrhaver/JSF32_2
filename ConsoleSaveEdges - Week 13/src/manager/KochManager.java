@@ -69,6 +69,7 @@ public class KochManager {
                     thrdBottom.start();
                     thrdLeft.start();
                     thrdRight.start();
+                    break;
                     
                 } catch (IOException e) {
                     LOG.log(Level.WARNING, "IOException occurred: {0}", e.getMessage());

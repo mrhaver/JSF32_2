@@ -7,10 +7,12 @@ package manager;
 
 import calculate.Edge;
 import calculate.KochFractal;
+import calculate.Triangle;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.Random;
@@ -46,12 +48,13 @@ public class GenerateBottom implements Runnable, Observer{
     public void update(Observable o, Object arg) {
         km.voegEdgeToe((Edge)arg);
         try{
-            Edge value = (Edge) arg;
-            out.writeObject(value);
-            
-            LOG.log(Level.INFO, "verzonden: {0}", value);
-
-            socket.close();
+            if(km.getCounter() == 3){
+                ArrayList<Edge> edges = km.getEdges();
+                Triangle value = new Triangle(edges.get(0),edges.get(1),edges.get(2));
+                LOG.log(Level.INFO, "verzonden: {0}", value);
+                out.writeObject(value);
+                socket.close();
+            }
         }
         catch(IOException ex){
             LOG.log(Level.SEVERE, null, ex);
@@ -63,7 +66,6 @@ public class GenerateBottom implements Runnable, Observer{
         try {
             LOG.log(Level.INFO, "Port: {0}", socket.getPort());
             
-            this.in = new ObjectInputStream(socket.getInputStream());
             this.out = new ObjectOutputStream(socket.getOutputStream());
             
             koch.generateBottomEdge();
@@ -72,7 +74,7 @@ public class GenerateBottom implements Runnable, Observer{
                 km.IncreaseCounter();
                 if(km.getCounter() == 3){
                     System.out.println("Calculating finished with " + km.getAmountEdges() + " edges");
-                    km.writeLockedMemMapped(level);
+                    //km.writeLockedMemMapped(level);
                     System.out.println("Enter the kochlevel / q to stop : ");
                     km.setCounter(0);
                 }

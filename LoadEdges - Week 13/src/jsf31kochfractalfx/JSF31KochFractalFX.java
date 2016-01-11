@@ -12,8 +12,13 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Scanner;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
@@ -44,6 +49,7 @@ public class JSF31KochFractalFX extends Application {
     private double startPressedY = 0.0;
     private double lastDragX = 0.0;
     private double lastDragY = 0.0;
+    private static final Logger LOG = Logger.getLogger(JSF31KochFractalFX.class.getName());
 
     // Koch manager
     // TO DO: Create class KochManager in package calculate
@@ -144,7 +150,17 @@ public class JSF31KochFractalFX extends Application {
                 drawFromText();
             }
         });
-        grid.add(buttonText, 9, 6);
+        grid.add(buttonText,9,6);
+        
+        Button buttonSockets = new Button();
+        buttonText.setText("Draw From Socket");
+        buttonText.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent event) {
+                drawFromSocket();
+            }
+        });
+        grid.add(buttonSockets, 11, 6);
 
         // Add mouse clicked event to Koch panel
         kochPanel.addEventHandler(MouseEvent.MOUSE_CLICKED,
@@ -451,6 +467,25 @@ public class JSF31KochFractalFX extends Application {
                 e.X2 * zoom + zoomTranslateX,
                 e.Y2 * zoom + zoomTranslateY,
                 e.color);
+    }
+    
+    private void drawFromSocket(){
+        try {
+            try (Socket socket = new Socket("localhost", 8189)) {
+                
+                ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
+                 
+                Triangle t = (Triangle) in.readObject();
+                ArrayList<Edge> edges = new ArrayList<Edge>();
+                for (Edge e : t.getEdges()){
+                    edges.add(e);
+                }
+                requestDrawEdges(edges);
+                LOG.log(Level.INFO, "Received {0}", t);
+            }
+        } catch (IOException | ClassNotFoundException ex) {
+            LOG.log(Level.SEVERE, null, ex);
+        }
     }
 
     /**
