@@ -107,12 +107,7 @@ public class Socket_Server {
     }
 
     public static void main(String[] args) {
-        int port;
-        if (args.length < 1) {
-            port = 6752;
-        } else {
-            port = Integer.parseInt(args[0]);
-        }
+        int port = 6752;
 
         try {
             serverSocket = new ServerSocket(port);
